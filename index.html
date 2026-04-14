@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>競走馬タイプ性格診断</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(10px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+  </style>
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans selection:bg-emerald-200">
+  <div class="max-w-screen-md mx-auto bg-stone-50 shadow-2xl min-h-screen relative overflow-hidden">
+    <!-- 背景の装飾 -->
+    <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-emerald-900 to-transparent opacity-10 pointer-events-none"></div>
+    
+    <main id="app-root" class="relative z-10"></main>
+  </div>
+
+  <script>
+    // --- データ定義 ---
+    const AXES_DEF = {
+      surface: { name: '本質', categories: ['芝', 'ダート', '障害'] },
+      distance: { name: '距離適性', categories: ['スプリント', 'マイル', 'クラシック', 'ステイヤー'] },
+      runningStyle: { name: '脚質', categories: ['逃げ', '先行', '差し', '追込'] },
+      course: { name: '舞台適性', categories: ['札幌', '函館', '福島', '中山', '東京', '新潟', '中京', '京都', '阪神', '小倉'] },
+      performance: { name: 'スタイル', categories: ['安定', '爆発', '持続成長'] },
+      aura: { name: '毛色', categories: ['鹿毛', '栗毛', '青鹿毛・黒鹿毛', '芦毛', '白毛'] }
+    };
+
+    const QUESTIONS = [
+      // --- 本質 (Surface) ---
+      { id: 1, text: '華やかな表舞台で活躍するよりも、泥臭く地道な努力を好む。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
+      { id: 2, text: '誰もが避けるような険しい道にあえて進むことにやりがいを感じる。', axis: 'surface', weights: { '障害': 1, '芝': -1 } },
+      { id: 3, text: '整えられた綺麗な環境のほうが、自分の実力を100%発揮できる。', axis: 'surface', weights: { '芝': 1, 'ダート': -1, '障害': -1 } },
+      { id: 4, text: 'ルールが明確でフェアな競争こそが最も燃える。', axis: 'surface', weights: { '芝': 1, '障害': -1 } },
+      { id: 5, text: '逆境に立たされた時ほど、不思議と力が湧いてくる。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
+      { id: 6, text: 'トラブルが起きた時、型破りな方法で解決するのが得意だ。', axis: 'surface', weights: { '障害': 1, 'ダート': -1 } },
+      { id: 7, text: '評価基準が曖昧な環境よりも、結果が全ての世界で勝負したい。', axis: 'surface', weights: { '芝': 1, 'ダート': -1 } },
+      { id: 8, text: '他の人が嫌がるような地味な作業も苦にならない。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
+      { id: 9, text: '常に新しい課題や変化がないと退屈してしまう。', axis: 'surface', weights: { '障害': 1, '芝': -1 } },
+      { id: 10, text: '洗練されたスマートなやり方を好む。', axis: 'surface', weights: { '芝': 1, 'ダート': -1, '障害': -1 } },
+
+      // --- 距離適性 (Distance) ---
+      { id: 11, text: '短期集中で一気にタスクを片付けるのが得意だ。', axis: 'distance', weights: { 'スプリント': 1, 'ステイヤー': -1 } },
+      { id: 12, text: '長期的な目標に向かって、ペースを崩さずコツコツ努力できる。', axis: 'distance', weights: { 'ステイヤー': 1, 'スプリント': -1 } },
+      { id: 13, text: 'どんなジャンルの仕事でも、平均点以上の結果を出す自信がある。', axis: 'distance', weights: { 'マイル': 1, 'クラシック': 1 } },
+      { id: 14, text: '王道のキャリアコースを進むことに憧れがある。', axis: 'distance', weights: { 'クラシック': 1, 'マイル': -1 } },
+      { id: 15, text: '一度始めたことは、最後までやり遂げないと気が済まない。', axis: 'distance', weights: { 'ステイヤー': 1, 'スプリント': -1 } },
+      { id: 16, text: '結論を急ぐあまり、せっかちだと言われることがある。', axis: 'distance', weights: { 'スプリント': 1, 'ステイヤー': -1 } },
+      { id: 17, text: '状況に応じて、柔軟に自分の役割を変えることができる。', axis: 'distance', weights: { 'マイル': 1, 'クラシック': -1 } },
+      { id: 18, text: '大きなプレッシャーがかかる大一番でこそ真価を発揮する。', axis: 'distance', weights: { 'クラシック': 1, 'マイル': -1 } },
+      { id: 19, text: '複数の案件を同時に進行させるのが得意だ。', axis: 'distance', weights: { 'マイル': 1, 'ステイヤー': -1 } },
+      { id: 20, text: '5年後、10年後を見据えた計画を立てるのが好きだ。', axis: 'distance', weights: { 'ステイヤー': 1, 'スプリント': -1 } },
+
+      // --- 脚質 (Running Style) ---
+      { id: 21, text: 'グループでは自ら先頭に立ってプロジェクトを牽引したい。', axis: 'runningStyle', weights: { '逃げ': 1, '追込': -1 } },
+      { id: 22, text: '周囲の状況を伺いながら、自分の得意なタイミングで一気に勝負に出る。', axis: 'runningStyle', weights: { '差し': 1, '先行': -1 } },
+      { id: 23, text: 'ギリギリまで力を温存し、土壇場で大逆転を狙うのが好きだ。', axis: 'runningStyle', weights: { '追込': 1, '逃げ': -1 } },
+      { id: 24, text: 'リスクを避け、常に良いポジションをキープして物事を進めたい。', axis: 'runningStyle', weights: { '先行': 1, '差し': -1 } },
+      { id: 25, text: '誰かに指示される前に、自分から行動を起こすタイプだ。', axis: 'runningStyle', weights: { '逃げ': 1, '差し': -1 } },
+      { id: 26, text: '石橋を叩いて渡るような、堅実な進め方を好む。', axis: 'runningStyle', weights: { '先行': 1, '追込': -1 } },
+      { id: 27, text: '全体を俯瞰して、ボトルネックを見つけ出すのが得意だ。', axis: 'runningStyle', weights: { '差し': 1, '逃げ': -1 } },
+      { id: 28, text: '圧倒的な成果を出して、周囲を驚かせることに快感を覚える。', axis: 'runningStyle', weights: { '追込': 1, '先行': -1 } },
+      { id: 29, text: 'ペースメーカーとして、周囲を巻き込むのが得意だ。', axis: 'runningStyle', weights: { '逃げ': 1, '差し': -1 } },
+      { id: 30, text: '目立つことは避け、二番手・三番手の位置で確実に貢献したい。', axis: 'runningStyle', weights: { '先行': 1, '逃げ': -1 } },
+
+      // --- 舞台適性 (Course) ---
+      { id: 31, text: '大人数のコミュニティより、少人数のアットホームな環境で力を発揮する。', axis: 'course', weights: { '札幌': 1, '函館': 1, '福島': 1, '小倉': 1, '東京': -1 } },
+      { id: 32, text: 'ごまかしの利かない実力主義のフェアな環境で、堂々と勝負したい。', axis: 'course', weights: { '東京': 1, '阪神': 1, '中山': -1, '小倉': -1 } },
+      { id: 33, text: 'トリッキーな状況や変化の激しい環境を乗り越えるのが得意だ。', axis: 'course', weights: { '中山': 1, '阪神': 1, '新潟': -1, '京都': -1 } },
+      { id: 34, text: '波乱がなく、淡々と自分のペースで進められる環境を好む。', axis: 'course', weights: { '新潟': 1, '京都': 1, '中京': 1, '中山': -1 } },
+      { id: 35, text: '困難や障害（急坂）が多いほど燃えるタイプだ。', axis: 'course', weights: { '中山': 1, '阪神': 1, '京都': -1 } },
+      { id: 36, text: '平坦でスムーズな道のりを、一直線に駆け抜けたい。', axis: 'course', weights: { '京都': 1, '新潟': 1, '中山': -1 } },
+      { id: 37, text: '少し変わった独自のルールがある組織のほうが馴染みやすい。', axis: 'course', weights: { '札幌': 1, '函館': 1, '中京': 1, '東京': -1 } },
+      { id: 38, text: 'スピードだけでなく、タフなパワーも求められる厳しい環境を好む。', axis: 'course', weights: { '阪神': 1, '中山': 1, '新潟': -1 } },
+      { id: 39, text: '長い時間をかけてじっくり実力を競える環境が良い。', axis: 'course', weights: { '東京': 1, '新潟': 1, '福島': -1, '小倉': -1 } },
+      { id: 40, text: '忙しく動き回り、機動力が求められるポジションが得意だ。', axis: 'course', weights: { '福島': 1, '小倉': 1, '東京': -1, '新潟': -1 } },
+
+      // --- スタイル (Performance) ---
+      { id: 41, text: '常に一定の成果を出し続け、「安定感がある」と言われる。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
+      { id: 42, text: '気分にムラはあるが、ハマったときのパフォーマンスには絶対の自信がある。', axis: 'performance', weights: { '爆発': 1, '安定': -1 } },
+      { id: 43, text: '最初は目立たなくても、経験を積むごとにどんどん成長していくタイプだ。', axis: 'performance', weights: { '持続成長': 1, '爆発': -1 } },
+      { id: 44, text: '決まったルーティンワークを正確にこなすのは得意な方だ。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
+      { id: 45, text: '失敗を恐れず、常に新しいことにチャレンジしたい。', axis: 'performance', weights: { '爆発': 1, '安定': -1 } },
+      { id: 46, text: '過去の失敗を分析し、次に活かす能力が高い。', axis: 'performance', weights: { '持続成長': 1, '安定': -1 } },
+      { id: 47, text: '予期せぬトラブルが起きても、冷静に対処できる。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
+      { id: 48, text: '10回に1回の特大ホームランを狙うプレースタイルだ。', axis: 'performance', weights: { '爆発': 1, '安定': -1 } },
+      { id: 49, text: '他人のアドバイスを素直に聞き入れ、自分をアップデートできる。', axis: 'performance', weights: { '持続成長': 1, '安定': -1 } },
+      { id: 50, text: 'スランプに陥ることは少なく、いつでも計算できる戦力だ。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
+
+      // --- 毛色 (Aura) ---
+      { id: 51, text: '組織の標準的なスタイルやルールに合わせることに抵抗がない。', axis: 'aura', weights: { '鹿毛': 1, '白毛': -1 } },
+      { id: 52, text: 'どこにいても自然と目立ってしまい、良くも悪くも注目を集めやすい。', axis: 'aura', weights: { '白毛': 1, '芦毛': 1, '鹿毛': -1 } },
+      { id: 53, text: '感情が表に出やすく、情熱的な性格だと言われる。', axis: 'aura', weights: { '栗毛': 1, '青鹿毛・黒鹿毛': -1 } },
+      { id: 54, text: 'クールでミステリアスな雰囲気を持ち、冷静沈着だと言われる。', axis: 'aura', weights: { '青鹿毛・黒鹿毛': 1, '栗毛': -1 } },
+      { id: 55, text: '最初はとっつきにくいと思われるが、付き合うほどに魅力が伝わるタイプだ。', axis: 'aura', weights: { '芦毛': 1, '白毛': -1 } },
+      { id: 56, text: 'どんな色の組織にもすぐに馴染むことができる。', axis: 'aura', weights: { '鹿毛': 1, '栗毛': -1 } },
+      { id: 57, text: 'カリスマ性があり、自然と人が集まってくる。', axis: 'aura', weights: { '白毛': 1, '鹿毛': -1 } },
+      { id: 58, text: '熱しやすく冷めやすいところがある。', axis: 'aura', weights: { '栗毛': 1, '青鹿毛・黒鹿毛': -1 } },
+      { id: 59, text: '自分の世界をしっかりと持っており、他人に流されない。', axis: 'aura', weights: { '青鹿毛・黒鹿毛': 1, '鹿毛': -1 } },
+      { id: 60, text: '年齢や経験を重ねるごとに、自分のスタイルが完成していく感覚がある。', axis: 'aura', weights: { '芦毛': 1, '栗毛': -1 } },
+    ];
+
+    const ANSWER_OPTIONS = [
+      { label: '非常にそう思う', score: 3, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+      { label: 'そう思う', score: 2, color: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
+      { label: 'ややそう思う', score: 1, color: 'bg-emerald-400 hover:bg-emerald-500 text-white' },
+      { label: 'ややそう思わない', score: -1, color: 'bg-stone-400 hover:bg-stone-500 text-white' },
+      { label: 'あまりそう思わない', score: -2, color: 'bg-stone-500 hover:bg-stone-600 text-white' },
+      { label: '全くそう思わない', score: -3, color: 'bg-stone-600 hover:bg-stone-700 text-white' },
+    ];
+
+    const CATEGORY_DESCRIPTIONS = {
+      // Surface
+      '芝': { features: '王道・華やかさ・純粋な実力勝負を好む', strength: '整った環境での圧倒的なパフォーマンス', weakness: '予期せぬトラブルや環境悪化への耐性', env: 'ルールが明確でフェアな競争環境' },
+      'ダート': { features: 'タフネス・泥臭さ・パワー重視', strength: '逆境を跳ね返す力、継続的な努力', weakness: 'スピード勝負や派手なアピール', env: '地道な努力が評価される堅実な職場' },
+      '障害': { features: '挑戦心・危機回避能力・器用さ', strength: '高いハードルを越えるアイデアと行動力', weakness: 'ルーティンワークへの飽きやすさ', env: '常に新しい課題が発生するベンチャー環境' },
+      // Distance
+      'スプリント': { features: '瞬発力・短期集中・せっかち', strength: '圧倒的なスピード感とタスク処理能力', weakness: '長期的なモチベーション維持', env: '短期プロジェクトや即断即決が求められる現場' },
+      'マイル': { features: 'バランス・対応力・スピード＆スタミナ', strength: '多様なタスクを高水準でこなす器用さ', weakness: '器用貧乏になりがち', env: '多様な業務を兼任するジェネラリスト的ポジション' },
+      'クラシック': { features: 'エリート・王道・完成度の高さ', strength: '高い理想とそれを実現する実力', weakness: 'プレッシャーに弱くなる瞬間がある', env: '大きな期待を背負う花形部署' },
+      'ステイヤー': { features: '持久力・忍耐・長期展望', strength: '誰もが諦めるような長期戦を勝ち抜く忍耐力', weakness: '瞬発的な判断やペースアップ', env: '研究開発など長期的な視点が必要な仕事' },
+      // Running Style
+      '逃げ': { features: '先駆者・リーダーシップ・マイペース', strength: '主導権を握った時の無類の強さ', weakness: '他人にペースを乱されると脆い', env: '裁量が大きく、自ら道を切り開ける環境' },
+      '先行': { features: '優等生・リスク管理・好位キープ', strength: '失敗が少なく、常に安定したポジションを取れる', weakness: '想定外の事態でのアドリブ力', env: '組織の中で着実にステップアップできる環境' },
+      '差し': { features: '冷静沈着・状況判断・瞬発力', strength: '周囲を観察し、最適なタイミングで動く勝負強さ', weakness: '展開が向かないと実力を発揮できない', env: '全体を俯瞰し、戦略的に動けるポジション' },
+      '追込': { features: '大器・型破り・ロマンチスト', strength: '逆境からの大逆転、他を圧倒する爆発力', weakness: 'エンジンがかかるのが遅い、ムラがある', env: '一発の大きな成果が評価されるクリエイティブ職' },
+      // Performance
+      '安定': { features: '信頼感・堅実・ルーティン', strength: '調子の波が少なく、いつでも計算できる戦力', weakness: '殻を破るような劇的な進化はしにくい', env: '確実性が求められるインフラや管理部門' },
+      '爆発': { features: '天才肌・ムラっ気・カリスマ', strength: 'ツボにハマった時の誰にも止められないパフォーマンス', weakness: 'モチベーションによる成果の落差が激しい', env: '個人の裁量で大きなリターンを狙える環境' },
+      '持続成長': { features: '大器晩成・努力家・吸収力', strength: '失敗を糧にしてどこまでも成長し続ける力', weakness: '即戦力としての期待には応えづらい', env: '教育体制が整い、長期育成を前提とした組織' },
+      // Aura
+      '鹿毛': { features: '標準的で協調性が高く、どんな色にも染まれる適応力を持つ。' },
+      '栗毛': { features: '情熱的で感情豊か。周囲を明るく照らすが、少し短気な面も。' },
+      '青鹿毛・黒鹿毛': { features: 'クールでミステリアス。冷静沈着で芯の強さを感じさせる。' },
+      '芦毛': { features: '最初は目立たなくても、徐々に頭角を現し不思議な魅力を放つ。' },
+      '白毛': { features: '圧倒的な存在感とカリスマ性。そこにいるだけで華になる。' },
+      // Course
+      '東京': { features: 'ごまかしの利かない実力勝負の舞台を好む。' },
+      '中山': { features: '急坂やトリッキーな条件など、困難な状況で燃える。' },
+      '京都': { features: '平坦で美しい流れの、洗練された環境を好む。' },
+      '阪神': { features: 'タフさとパワーが求められる厳しい環境で真価を発揮。' },
+      '札幌': { features: '特殊な環境や、他とは少し違うローカルな空気に馴染む。' },
+      '函館': { features: '特殊な環境や、他とは少し違うローカルな空気に馴染む。' },
+      '福島': { features: '小回りが利き、機動力が求められる忙しい環境が得意。' },
+      '小倉': { features: '小回りが利き、機動力が求められる忙しい環境が得意。' },
+      '新潟': { features: '圧倒的な直線（長期戦・直線的な思考）で実力を発揮。' },
+      '中京': { features: '一筋縄ではいかない、タフで独特な環境を好む。' }
+    };
+
+    // --- アイコン SVG 定義 ---
+    const ICONS = {
+      Trophy: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-400"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`,
+      ChevronRight: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`,
+      ClipboardList: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>`,
+      Share2: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>`,
+      RefreshCw: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`,
+      ChevronLeft: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`,
+      Info: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`
+    };
+
+    // --- 状態管理 ---
+    let gameState = 'title'; // 'title', 'quiz', 'result'
+    let currentQuestionIndex = 0;
+    let answers = {};
+    let testResult = null;
+    let history = [];
+
+    // 初期化
+    window.onload = () => {
+      try {
+        const saved = localStorage.getItem('horseTestHistory');
+        if (saved) history = JSON.parse(saved);
+      } catch (e) {
+        console.error("Local storage access failed");
+      }
+      render();
+    };
+
+    // --- アクションハンドラー ---
+    function handleStart() {
+      answers = {};
+      currentQuestionIndex = 0;
+      testResult = null;
+      gameState = 'quiz';
+      render();
+    }
+
+    function handleAnswer(score) {
+      const question = QUESTIONS[currentQuestionIndex];
+      answers[question.id] = score;
+
+      if (currentQuestionIndex < QUESTIONS.length - 1) {
+        // ボタンのクリック感を持たせるための少しの遅延
+        setTimeout(() => {
+          currentQuestionIndex++;
+          render();
+        }, 150);
+      } else {
+        calculateResult();
+      }
+    }
+
+    function showHistory() {
+      if (history.length > 0) {
+        testResult = history[0];
+        gameState = 'result';
+        render();
+      }
+    }
+
+    function showTitle() {
+      gameState = 'title';
+      render();
+    }
+
+    function handleShare() {
+      if (!testResult) return;
+      const { types, catchphrase } = testResult;
+      const text = `私の競走馬タイプは【${catchphrase}】\n${types.surface}×${types.distance}×${types.runningStyle}×${types.course}×${types.performance}×${types.aura}\n#競走馬性格診断`;
+      
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        alert('結果をクリップボードにコピーしました！SNSでシェアしよう！');
+      } catch (err) {
+        console.error('Copy failed', err);
+      }
+      document.body.removeChild(textArea);
+    }
+
+    // --- 計算ロジック ---
+    function calculateResult() {
+      const scores = {};
+      Object.keys(AXES_DEF).forEach(axis => {
+        scores[axis] = {};
+        AXES_DEF[axis].categories.forEach(cat => {
+          scores[axis][cat] = 0;
+        });
+      });
+
+      QUESTIONS.forEach(q => {
+        const answerScore = answers[q.id];
+        if (answerScore !== undefined) {
+          Object.keys(q.weights).forEach(category => {
+            scores[q.axis][category] += (q.weights[category] * answerScore);
+          });
+        }
+      });
+
+      const finalResult = {};
+      Object.keys(scores).forEach(axis => {
+        let maxScore = -Infinity;
+        let topCategory = AXES_DEF[axis].categories[0];
+        
+        Object.keys(scores[axis]).forEach(cat => {
+          if (scores[axis][cat] > maxScore) {
+            maxScore = scores[axis][cat];
+            topCategory = cat;
+          }
+        });
+        finalResult[axis] = topCategory;
+      });
+
+      const stats = {
+        スピード: calculateStat(['スプリント', '逃げ']),
+        スタミナ: calculateStat(['ステイヤー', 'ダート', '阪神']),
+        勝負根性: calculateStat(['差し', '中山', '障害']),
+        安定感: calculateStat(['先行', '安定', 'マイル']),
+        爆発力: calculateStat(['追込', '爆発']),
+        カリスマ: calculateStat(['白毛', 'クラシック', '東京']),
+      };
+
+      testResult = {
+        date: new Date().toISOString(),
+        types: finalResult,
+        catchphrase: generateCatchphrase(finalResult),
+        stats: stats
+      };
+
+      gameState = 'result';
+      
+      // 履歴保存
+      history = [testResult, ...history].slice(0, 5);
+      try {
+        localStorage.setItem('horseTestHistory', JSON.stringify(history));
+      } catch (e) {}
+
+      render();
+    }
+
+    function calculateStat(targetCategories) {
+      let total = 0;
+      QUESTIONS.forEach(q => {
+        const answerScore = answers[q.id] || 0;
+        targetCategories.forEach(target => {
+          if (q.weights[target]) {
+            total += (q.weights[target] * answerScore);
+          }
+        });
+      });
+      return Math.min(100, Math.max(20, 50 + (total * 3)));
+    }
+
+    function generateCatchphrase(types) {
+      const prefix = {
+        '逃げ': '風を切り裂く', '先行': '王道を行く', '差し': '機を伺う', '追込': '型破りな'
+      }[types.runningStyle] || '気高き';
+
+      const middle = {
+        '安定': '優等生', '爆発': '一発逆転の', '持続成長': '大器晩成の'
+      }[types.performance] || '名馬';
+
+      const suffix = {
+        'スプリント': 'スピードスター', 'マイル': 'オールラウンダー', 'クラシック': 'エリート', 'ステイヤー': 'ステイヤー'
+      }[types.distance] || 'エース';
+
+      return `${prefix}${middle}${suffix}`;
+    }
+
+    // --- レンダリングロジック ---
+    const appRoot = document.getElementById('app-root');
+
+    function render() {
+      if (gameState === 'title') appRoot.innerHTML = renderTitleScreen();
+      else if (gameState === 'quiz') appRoot.innerHTML = renderQuizScreen();
+      else if (gameState === 'result') appRoot.innerHTML = renderResultScreen();
+    }
+
+    function renderTitleScreen() {
+      const historyBtn = history.length > 0 
+        ? `<button onclick="showHistory()" class="mt-6 text-emerald-700 text-sm font-medium hover:underline flex items-center gap-1 justify-center w-full">
+            ${ICONS.ClipboardList} 前回の結果を見る
+           </button>` 
+        : '';
+
+      return `
+        <div class="flex flex-col items-center justify-center min-h-[80vh] text-center px-4 animate-fade-in">
+          <div class="w-24 h-24 bg-emerald-800 rounded-full flex items-center justify-center mb-6 shadow-lg">
+            ${ICONS.Trophy}
+          </div>
+          <h1 class="text-3xl font-extrabold text-stone-800 mb-2 tracking-tight">
+            競走馬タイプ<br />
+            <span class="text-emerald-700">性格診断</span>
+          </h1>
+          <p class="text-stone-600 mb-8 mt-4 text-sm leading-relaxed max-w-sm">
+            あなたの性格や価値観から、<br />
+            競走馬としての適性（全6軸）を分析します。<br />
+            直感で全${QUESTIONS.length}問にお答えください。
+          </p>
+          <button onclick="handleStart()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-4 px-12 rounded-full shadow-lg transition-transform transform hover:scale-105 active:scale-95 flex items-center gap-2">
+            診断をはじめる
+            ${ICONS.ChevronRight}
+          </button>
+          ${historyBtn}
+        </div>
+      `;
+    }
+
+    function renderQuizScreen() {
+      const question = QUESTIONS[currentQuestionIndex];
+      const progress = ((currentQuestionIndex) / QUESTIONS.length) * 100;
+
+      const optionsHtml = ANSWER_OPTIONS.map(opt => `
+        <button onclick="handleAnswer(${opt.score})" class="py-3 px-6 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 ${opt.color} w-full text-center">
+          ${opt.label}
+        </button>
+      `).join('');
+
+      return `
+        <div class="flex flex-col max-w-md mx-auto min-h-[80vh] px-4 py-8 animate-fade-in">
+          <div class="mb-8">
+            <div class="flex justify-between text-xs text-stone-500 font-bold mb-2">
+              <span>Q. ${currentQuestionIndex + 1} / ${QUESTIONS.length}</span>
+              <span>${Math.round(progress)}%</span>
+            </div>
+            <div class="w-full bg-stone-200 rounded-full h-2.5 overflow-hidden">
+              <div class="bg-emerald-600 h-2.5 rounded-full transition-all duration-300 ease-out" style="width: ${progress}%"></div>
+            </div>
+          </div>
+
+          <div class="flex-grow flex flex-col justify-center mb-8">
+            <span class="text-xs font-bold text-emerald-600 mb-3 bg-emerald-100 inline-block self-start px-2 py-1 rounded">
+              ${AXES_DEF[question.axis].name}
+            </span>
+            <h2 class="text-xl font-bold text-stone-800 leading-relaxed min-h-[5rem]">
+              ${question.text}
+            </h2>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            ${optionsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderResultScreen() {
+      if (!testResult) return '';
+      const { types, catchphrase, stats } = testResult;
+
+      const typeBadges = Object.keys(AXES_DEF).map(axis => `
+        <span class="bg-stone-800 text-amber-400 text-xs font-bold px-3 py-1.5 rounded-md shadow">
+          ${types[axis]}
+        </span>
+      `).join('');
+
+      const radarSvg = generateRadarChartSVG(stats);
+
+      return `
+        <div class="flex flex-col max-w-lg mx-auto py-8 px-4 animate-fade-in">
+          <div class="text-center mb-8">
+            <p class="text-emerald-700 font-bold text-sm mb-2 tracking-widest">RESULT</p>
+            <h2 class="text-2xl md:text-3xl font-black text-stone-800 mb-4">${catchphrase}</h2>
+            
+            <div class="flex flex-wrap justify-center gap-2 mb-6">
+              ${typeBadges}
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 flex justify-center">
+            ${radarSvg}
+          </div>
+
+          <div class="space-y-6 mb-12">
+            <h3 class="text-xl font-bold text-stone-800 border-b-2 border-emerald-600 pb-2 flex items-center gap-2">
+              <span class="text-emerald-600">${ICONS.Info}</span>
+              詳細プロフィール
+            </h3>
+            
+            ${renderDetailCard("脚質・適性距離", "🏃", `
+              <p class="text-sm text-stone-700 leading-relaxed mb-3">
+                <span class="font-bold text-emerald-700">${types.runningStyle}</span> の脚質を持ち、<span class="font-bold text-emerald-700">${types.distance}</span> 距離で最も力を発揮します。
+              </p>
+              <div class="bg-stone-50 p-3 rounded-lg text-xs space-y-2">
+                <p><strong class="text-stone-800">強み:</strong> ${CATEGORY_DESCRIPTIONS[types.runningStyle].strength}</p>
+                <p><strong class="text-stone-800">弱点:</strong> ${CATEGORY_DESCRIPTIONS[types.runningStyle].weakness}</p>
+                <p><strong class="text-stone-800">活躍環境:</strong> ${CATEGORY_DESCRIPTIONS[types.runningStyle].env}</p>
+              </div>
+            `)}
+
+            ${renderDetailCard("本質・スタイル", "🔥", `
+              <p class="text-sm text-stone-700 leading-relaxed mb-3">
+                根本的な資質は <span class="font-bold text-emerald-700">${types.surface}</span> 型。パフォーマンスの傾向は <span class="font-bold text-emerald-700">${types.performance}</span> タイプです。
+              </p>
+              <div class="bg-stone-50 p-3 rounded-lg text-xs space-y-2">
+                <p>${CATEGORY_DESCRIPTIONS[types.surface].features}</p>
+                <p>${CATEGORY_DESCRIPTIONS[types.performance].features}</p>
+              </div>
+            `)}
+
+            ${renderDetailCard("舞台適性・オーラ", "✨", `
+              <p class="text-sm text-stone-700 leading-relaxed mb-3">
+                最も得意とする舞台は <span class="font-bold text-emerald-700">${types.course}</span>。纏っているオーラは <span class="font-bold text-emerald-700">${types.aura}</span> です。
+              </p>
+              <div class="bg-stone-50 p-3 rounded-lg text-xs space-y-2">
+                <p><strong class="text-stone-800">${types.course}:</strong> ${CATEGORY_DESCRIPTIONS[types.course].features}</p>
+                <p><strong class="text-stone-800">${types.aura}:</strong> ${CATEGORY_DESCRIPTIONS[types.aura].features}</p>
+              </div>
+            `)}
+          </div>
+
+          <div class="flex flex-col gap-4">
+            <button onclick="handleShare()" class="w-full bg-stone-800 hover:bg-stone-900 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95">
+              ${ICONS.Share2} 結果をコピーしてシェア
+            </button>
+            <button onclick="handleStart()" class="w-full bg-white hover:bg-stone-50 text-emerald-700 border-2 border-emerald-700 font-bold py-4 rounded-xl shadow flex items-center justify-center gap-2 transition-transform active:scale-95">
+              ${ICONS.RefreshCw} もう一度診断する
+            </button>
+            <button onclick="showTitle()" class="mt-4 text-stone-500 text-sm hover:underline flex items-center justify-center gap-1">
+              ${ICONS.ChevronLeft} タイトルへ戻る
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDetailCard(title, icon, contentHtml) {
+      return `
+        <div class="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+          <h4 class="font-bold text-stone-800 mb-3 flex items-center gap-2">
+            <span class="text-xl">${icon}</span> ${title}
+          </h4>
+          ${contentHtml}
+        </div>
+      `;
+    }
+
+    // --- レーダーチャート生成 (SVG) ---
+    function generateRadarChartSVG(data) {
+      const size = 280;
+      const center = size / 2;
+      const radius = (size / 2) * 0.7;
+      const labels = Object.keys(data);
+      const values = Object.values(data);
+      const sides = labels.length;
+      const angleStep = (Math.PI * 2) / sides;
+
+      const getPoint = (value, index) => {
+        const r = (value / 100) * radius;
+        const angle = index * angleStep - Math.PI / 2;
+        return {
+          x: center + r * Math.cos(angle),
+          y: center + r * Math.sin(angle)
+        };
+      };
+
+      const generateGridPath = (level) => {
+        const r = radius * level;
+        let path = '';
+        for (let i = 0; i < sides; i++) {
+          const angle = i * angleStep - Math.PI / 2;
+          const x = center + r * Math.cos(angle);
+          const y = center + r * Math.sin(angle);
+          path += (i === 0 ? `M ${x} ${y} ` : `L ${x} ${y} `);
+        }
+        return path + 'Z';
+      };
+
+      let grids = [0.2, 0.4, 0.6, 0.8, 1.0].map(level => 
+        `<path d="${generateGridPath(level)}" fill="none" stroke="#e5e7eb" stroke-width="1" />`
+      ).join('');
+
+      let lines = labels.map((_, i) => {
+        const p = getPoint(100, i);
+        return `<line x1="${center}" y1="${center}" x2="${p.x}" y2="${p.y}" stroke="#e5e7eb" stroke-width="1" />`;
+      }).join('');
+
+      const dataPathStr = values.map((val, i) => {
+        const p = getPoint(val, i);
+        return `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`;
+      }).join(' ') + ' Z';
+
+      const dataPoly = `<path d="${dataPathStr}" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" stroke-width="3" stroke-linejoin="round" />`;
+
+      const circles = values.map((val, i) => {
+        const p = getPoint(val, i);
+        return `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#047857" />`;
+      }).join('');
+
+      const texts = labels.map((label, i) => {
+        const p = getPoint(115, i);
+        let anchor = "middle";
+        if (p.x < center - 10) anchor = "end";
+        if (p.x > center + 10) anchor = "start";
+        return `<text x="${p.x}" y="${p.y + 4}" text-anchor="${anchor}" class="text-[10px] md:text-xs font-bold fill-stone-600">${label}</text>`;
+      }).join('');
+
+      return `
+        <svg width="${size}" height="${size}" class="overflow-visible">
+          ${grids}
+          ${lines}
+          ${dataPoly}
+          ${circles}
+          ${texts}
+        </svg>
+      `;
+    }
+  </script>
+</body>
+</html>
