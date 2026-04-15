@@ -23,6 +23,16 @@
 
   <script>
     // --- データ定義 ---
+
+const ANSWER_OPTIONS = [
+  { label: 'とても当てはまる', score: 3, color: 'bg-emerald-600 text-white' },
+  { label: 'やや当てはまる', score: 2, color: 'bg-emerald-400 text-white' },
+   { label: '少し当てはまる', score: 1, color: 'bg-emerald-200 text-gray-800' },
+ { label: '少し当てはまらない', score: -1, color: 'bg-gray-200 text-gray-800' },
+  { label: 'あまり当てはまらない', score: -2, color: 'bg-stone-300 text-stone-800' },
+  { label: '全く当てはまらない', score: -3, color: 'bg-stone-400 text-white' }
+];
+
     const AXES_DEF = {
       surface: { name: '本質', categories: ['芝', 'ダート', '障害'] },
       distance: { name: '距離適性', categories: ['スプリント', 'マイル', 'クラシック', 'ステイヤー'] },
@@ -33,87 +43,168 @@
     };
 
     const QUESTIONS = [
-      // --- 本質 (Surface) ---
-      { id: 1, text: '華やかな表舞台で活躍するよりも、泥臭く地道な努力を好む。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
-      { id: 2, text: '誰もが避けるような険しい道にあえて進むことにやりがいを感じる。', axis: 'surface', weights: { '障害': 1, '芝': -1 } },
-      { id: 3, text: '整えられた綺麗な環境のほうが、自分の実力を100%発揮できる。', axis: 'surface', weights: { '芝': 1, 'ダート': -1, '障害': -1 } },
-      { id: 4, text: 'ルールが明確でフェアな競争こそが最も燃える。', axis: 'surface', weights: { '芝': 1, '障害': -1 } },
-      { id: 5, text: '逆境に立たされた時ほど、不思議と力が湧いてくる。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
-      { id: 6, text: 'トラブルが起きた時、型破りな方法で解決するのが得意だ。', axis: 'surface', weights: { '障害': 1, 'ダート': -1 } },
-      { id: 7, text: '評価基準が曖昧な環境よりも、結果が全ての世界で勝負したい。', axis: 'surface', weights: { '芝': 1, 'ダート': -1 } },
-      { id: 8, text: '他の人が嫌がるような地味な作業も苦にならない。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
-      { id: 9, text: '常に新しい課題や変化がないと退屈してしまう。', axis: 'surface', weights: { '障害': 1, '芝': -1 } },
-      { id: 10, text: '洗練されたスマートなやり方を好む。', axis: 'surface', weights: { '芝': 1, 'ダート': -1, '障害': -1 } },
+  // --- 本質 (surface): 1-25 ---
+  { id: 1, text: '華やかな表舞台で活躍するよりも、泥臭く地道な努力を好む。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
+  { id: 2, text: '誰もが避けるような険しい道にあえて進むことにやりがいを感じる。', axis: 'surface', weights: { '障害': 1, '芝': -1 } },
+  { id: 3, text: '整えられた綺麗な環境のほうが、自分の実力を100%発揮できる。', axis: 'surface', weights: { '芝': 1, 'ダート': -1, '障害': -1 } },
+  { id: 4, text: 'ルールが明確でフェアな競争こそが最も燃える。', axis: 'surface', weights: { '芝': 1, '障害': -1 } },
+  { id: 5, text: '逆境に立たされた時ほど、不思議と力が湧いてくる。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
+  { id: 6, text: 'トラブルが起きた時、型破りな方法で解決するのが得意だ。', axis: 'surface', weights: { '障害': 1, 'ダート': -1 } },
+  { id: 7, text: '評価基準が曖昧な環境よりも、結果が全ての世界で勝負したい。', axis: 'surface', weights: { '芝': 1, 'ダート': -1 } },
+  { id: 8, text: '他の人が嫌がるような地味な作業も苦にならない。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
+  { id: 9, text: '常に新しい課題や変化がないと退屈してしまう。', axis: 'surface', weights: { '障害': 1, '芝': -1 } },
+  { id: 10, text: '洗練されたスマートなやり方を好む。', axis: 'surface', weights: { '芝': 1, 'ダート': -1, '障害': -1 } },
+  { id: 11, text: '不測の事態（雨やぬかるみ）に対して、動じない自信がある。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
+  { id: 12, text: '自分の足跡がはっきりと残る仕事に誇りを感じる。', axis: 'surface', weights: { 'ダート': 1 } },
+  { id: 13, text: '伝統や格式を重んじる組織でこそ、背筋が伸びて頑張れる。', axis: 'surface', weights: { '芝': 1 } },
+  { id: 14, text: 'リスクを恐れず、高いハードルに挑み続ける人生でありたい。', axis: 'surface', weights: { '障害': 1 } },
+  { id: 15, text: '多少の衝突や摩擦があっても、力で押し切るパワーがある。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
+  { id: 16, text: '美意識を持って仕事に取り組むことを大切にしている。', axis: 'surface', weights: { '芝': 1 } },
+  { id: 17, text: '一度決まったレールを走るより、自分で道を作る方が好きだ。', axis: 'surface', weights: { '障害': 1, '芝': -1 } },
+  { id: 18, text: '孤独な作業よりも、多くの観客（注目）がある方が燃える。', axis: 'surface', weights: { '芝': 1 } },
+  { id: 19, text: '道具や装備へのこだわりが強く、メンテナンスを欠かさない。', axis: 'surface', weights: { '芝': 1, '障害': 1 } },
+  { id: 20, text: '精神的なタフさには絶対の自信がある。', axis: 'surface', weights: { 'ダート': 1, '障害': 1 } },
+  { id: 21, text: '「天才」と呼ばれるより「鉄人」と呼ばれたい。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
+  { id: 22, text: '足元を掬われるような不安定な場所でも平気で歩ける。', axis: 'surface', weights: { 'ダート': 1, '障害': 1 } },
+  { id: 23, text: 'スピード感よりも、最後の一踏ん張りの重厚感を重視する。', axis: 'surface', weights: { 'ダート': 1, '芝': -1 } },
+  { id: 24, text: '人生には「ジャンプ（飛躍）」が必要不可欠だと思う。', axis: 'surface', weights: { '障害': 1 } },
+  { id: 25, text: '王道のキャリアこそが、自分の価値を証明する唯一の手段だ。', axis: 'surface', weights: { '芝': 1 } },
 
-      // --- 距離適性 (Distance) ---
-      { id: 11, text: '短期集中で一気にタスクを片付けるのが得意だ。', axis: 'distance', weights: { 'スプリント': 1, 'ステイヤー': -1 } },
-      { id: 12, text: '長期的な目標に向かって、ペースを崩さずコツコツ努力できる。', axis: 'distance', weights: { 'ステイヤー': 1, 'スプリント': -1 } },
-      { id: 13, text: 'どんなジャンルの仕事でも、平均点以上の結果を出す自信がある。', axis: 'distance', weights: { 'マイル': 1, 'クラシック': 1 } },
-      { id: 14, text: '王道のキャリアコースを進むことに憧れがある。', axis: 'distance', weights: { 'クラシック': 1, 'マイル': -1 } },
-      { id: 15, text: '一度始めたことは、最後までやり遂げないと気が済まない。', axis: 'distance', weights: { 'ステイヤー': 1, 'スプリント': -1 } },
-      { id: 16, text: '結論を急ぐあまり、せっかちだと言われることがある。', axis: 'distance', weights: { 'スプリント': 1, 'ステイヤー': -1 } },
-      { id: 17, text: '状況に応じて、柔軟に自分の役割を変えることができる。', axis: 'distance', weights: { 'マイル': 1, 'クラシック': -1 } },
-      { id: 18, text: '大きなプレッシャーがかかる大一番でこそ真価を発揮する。', axis: 'distance', weights: { 'クラシック': 1, 'マイル': -1 } },
-      { id: 19, text: '複数の案件を同時に進行させるのが得意だ。', axis: 'distance', weights: { 'マイル': 1, 'ステイヤー': -1 } },
-      { id: 20, text: '5年後、10年後を見据えた計画を立てるのが好きだ。', axis: 'distance', weights: { 'ステイヤー': 1, 'スプリント': -1 } },
+  // --- 距離適性 (distance): 26-50 ---
+  { id: 26, text: '短期集中で一気にタスクを片付けるのが得意だ。', axis: 'distance', weights: { 'スプリント': 1, 'ステイヤー': -1 } },
+  { id: 27, text: '長期的な目標に向かって、ペースを崩さずコツコツ努力できる。', axis: 'distance', weights: { 'ステイヤー': 1, 'スプリント': -1 } },
+  { id: 28, text: 'どんなジャンルの仕事でも、平均点以上の結果を出す自信がある。', axis: 'distance', weights: { 'マイル': 1, 'クラシック': 1 } },
+  { id: 29, text: '王道のキャリアコースを進むことに憧れがある。', axis: 'distance', weights: { 'クラシック': 1, 'マイル': -1 } },
+  { id: 30, text: '一度始めたことは、最後までやり遂げないと気が済まない。', axis: 'distance', weights: { 'ステイヤー': 1, 'スプリント': -1 } },
+  { id: 31, text: '結論を急ぐあまり、せっかちだと言われることがある。', axis: 'distance', weights: { 'スプリント': 1, 'ステイヤー': -1 } },
+  { id: 32, text: '状況に応じて、柔軟に自分の役割を変えることができる。', axis: 'distance', weights: { 'マイル': 1, 'クラシック': -1 } },
+  { id: 33, text: '大きなプレッシャーがかかる大一番でこそ真価を発揮する。', axis: 'distance', weights: { 'クラシック': 1, 'マイル': -1 } },
+  { id: 34, text: '複数の案件を同時に進行させるのが得意だ。', axis: 'distance', weights: { 'マイル': 1, 'ステイヤー': -1 } },
+  { id: 35, text: '5年後、10年後を見据えた計画を立てるのが好きだ。', axis: 'distance', weights: { 'ステイヤー': 1, 'スプリント': -1 } },
+  { id: 36, text: '雑談よりも、要件だけを早く済ませたいタイプだ。', axis: 'distance', weights: { 'スプリント': 1 } },
+  { id: 37, text: '変化の激しい環境より、一定のリズムで進める方が楽だ。', axis: 'distance', weights: { 'ステイヤー': 1, 'マイル': -1 } },
+  { id: 38, text: '「万能」という言葉は、最高の褒め言葉だと思う。', axis: 'distance', weights: { 'マイル': 1 } },
+  { id: 39, text: '名誉ある賞やタイトルへの執着心が強い。', axis: 'distance', weights: { 'クラシック': 1 } },
+  { id: 40, text: '一瞬の閃きよりも、深い思考を巡らせる時間が好きだ。', axis: 'distance', weights: { 'ステイヤー': 1, 'スプリント': -1 } },
+  { id: 41, text: '1分1秒を争うようなデッドヒートに興奮を覚える。', axis: 'distance', weights: { 'スプリント': 1 } },
+  { id: 42, text: '多くの人が息切れする後半戦からが本番だ。', axis: 'distance', weights: { 'ステイヤー': 1 } },
+  { id: 43, text: '専門性を一つに絞るより、多才でありたい。', axis: 'distance', weights: { 'マイル': 1 } },
+  { id: 44, text: '自分がその場の「主役」になるべきだと信じている。', axis: 'distance', weights: { 'クラシック': 1 } },
+  { id: 45, text: 'スタミナ切れを感じることは滅多にない。', axis: 'distance', weights: { 'ステイヤー': 1 } },
+  { id: 46, text: '初対面の相手とも、短時間で打ち解けることができる。', axis: 'distance', weights: { 'スプリント': 1 } },
+  { id: 47, text: '「伝説」になるためには、大きな代償を払う覚悟がある。', axis: 'distance', weights: { 'クラシック': 1 } },
+  { id: 48, text: '細かいミスを気にするより、前に進むスピードを重視する。', axis: 'distance', weights: { 'スプリント': 1 } },
+  { id: 49, text: 'じっくりと腰を据えて取り組むプロジェクトが向いている。', axis: 'distance', weights: { 'ステイヤー': 1 } },
+  { id: 50, text: '周囲の期待を背負うほど、実力以上の力が出る。', axis: 'distance', weights: { 'クラシック': 1 } },
 
-      // --- 脚質 (Running Style) ---
-      { id: 21, text: 'グループでは自ら先頭に立ってプロジェクトを牽引したい。', axis: 'runningStyle', weights: { '逃げ': 1, '追込': -1 } },
-      { id: 22, text: '周囲の状況を伺いながら、自分の得意なタイミングで一気に勝負に出る。', axis: 'runningStyle', weights: { '差し': 1, '先行': -1 } },
-      { id: 23, text: 'ギリギリまで力を温存し、土壇場で大逆転を狙うのが好きだ。', axis: 'runningStyle', weights: { '追込': 1, '逃げ': -1 } },
-      { id: 24, text: 'リスクを避け、常に良いポジションをキープして物事を進めたい。', axis: 'runningStyle', weights: { '先行': 1, '差し': -1 } },
-      { id: 25, text: '誰かに指示される前に、自分から行動を起こすタイプだ。', axis: 'runningStyle', weights: { '逃げ': 1, '差し': -1 } },
-      { id: 26, text: '石橋を叩いて渡るような、堅実な進め方を好む。', axis: 'runningStyle', weights: { '先行': 1, '追込': -1 } },
-      { id: 27, text: '全体を俯瞰して、ボトルネックを見つけ出すのが得意だ。', axis: 'runningStyle', weights: { '差し': 1, '逃げ': -1 } },
-      { id: 28, text: '圧倒的な成果を出して、周囲を驚かせることに快感を覚える。', axis: 'runningStyle', weights: { '追込': 1, '先行': -1 } },
-      { id: 29, text: 'ペースメーカーとして、周囲を巻き込むのが得意だ。', axis: 'runningStyle', weights: { '逃げ': 1, '差し': -1 } },
-      { id: 30, text: '目立つことは避け、二番手・三番手の位置で確実に貢献したい。', axis: 'runningStyle', weights: { '先行': 1, '逃げ': -1 } },
+  // --- 脚質 (runningStyle): 51-75 ---
+  { id: 51, text: 'グループでは自ら先頭に立ってプロジェクトを牽引したい。', axis: 'runningStyle', weights: { '逃げ': 1, '追込': -1 } },
+  { id: 52, text: '周囲の状況を伺いながら、自分の得意なタイミングで一気に勝負に出る。', axis: 'runningStyle', weights: { '差し': 1, '先行': -1 } },
+  { id: 53, text: 'ギリギリまで力を温存し、土壇場で大逆転を狙うのが好きだ。', axis: 'runningStyle', weights: { '追込': 1, '逃げ': -1 } },
+  { id: 54, text: 'リスクを避け、常に良いポジションをキープして物事を進めたい。', axis: 'runningStyle', weights: { '先行': 1, '差し': -1 } },
+  { id: 55, text: '誰かに指示される前に、自分から行動を起こすタイプだ。', axis: 'runningStyle', weights: { '逃げ': 1, '差し': -1 } },
+  { id: 56, text: '石橋を叩いて渡るような、堅実な進め方を好む。', axis: 'runningStyle', weights: { '先行': 1, '追込': -1 } },
+  { id: 57, text: '全体を俯瞰して、ボトルネックを見つけ出すのが得意だ。', axis: 'runningStyle', weights: { '差し': 1, '逃げ': -1 } },
+  { id: 58, text: '圧倒的な成果を出して、周囲を驚かせることに快感を覚える。', axis: 'runningStyle', weights: { '追込': 1, '先行': -1 } },
+  { id: 59, text: 'ペースメーカーとして、周囲を巻き込むのが得意だ。', axis: 'runningStyle', weights: { '逃げ': 1, '差し': -1 } },
+  { id: 60, text: '目立つことは避け、二番手・三番手の位置で確実に貢献したい。', axis: 'runningStyle', weights: { '先行': 1, '逃げ': -1 } },
+  { id: 61, text: '他人の顔色を窺って動くのは、自分らしくない。', axis: 'runningStyle', weights: { '逃げ': 1 } },
+  { id: 62, text: '計画通りに事が進まないと、激しいストレスを感じる。', axis: 'runningStyle', weights: { '先行': 1, '追込': -1 } },
+  { id: 63, text: '追い詰められた極限状態の方が、思考がクリアになる。', axis: 'runningStyle', weights: { '追込': 1 } },
+  { id: 64, text: '他人の失敗をカバーするポジションにいることが多い。', axis: 'runningStyle', weights: { '差し': 1 } },
+  { id: 65, text: '「自由」であることが、自分にとって最大のパフォーマンスの鍵だ。', axis: 'runningStyle', weights: { '逃げ': 1, '追込': 1 } },
+  { id: 66, text: '周囲からの信頼が厚い「安定した人」だと思われている。', axis: 'runningStyle', weights: { '先行': 1 } },
+  { id: 67, text: '虎視眈々とチャンスを狙う時間が、実は一番楽しい。', axis: 'runningStyle', weights: { '差し': 1 } },
+  { id: 68, text: '「普通」のやり方では勝てないから、独自の策を練る。', axis: 'runningStyle', weights: { '追込': 1 } },
+  { id: 69, text: '他人に自分の前を歩かれるのが、生理的に受け付けない。', axis: 'runningStyle', weights: { '逃げ': 1 } },
+  { id: 70, text: '組織の和を乱さず、かつ自分の意見も通すバランス感覚がある。', axis: 'runningStyle', weights: { '先行': 1 } },
+  { id: 71, text: '直感よりも、論理的な分析に基づいて行動を選択する。', axis: 'runningStyle', weights: { '差し': 1 } },
+  { id: 72, text: '「奇跡」は待つものではなく、自ら引き起こすものだ。', axis: 'runningStyle', weights: { '追込': 1 } },
+  { id: 73, text: '一人でいる時の方が、圧倒的に集中できる。', axis: 'runningStyle', weights: { '逃げ': 1, '追込': 1 } },
+  { id: 74, text: '勝ち筋が見えるまで、じっと耐える忍耐力がある。', axis: 'runningStyle', weights: { '差し': 1, '追込': 1 } },
+  { id: 75, text: '常にアップデートを繰り返し、最適な位置を模索する。', axis: 'runningStyle', weights: { '先行': 1, '差し': 1 } },
 
-      // --- 舞台適性 (Course) ---
-      { id: 31, text: '大人数のコミュニティより、少人数のアットホームな環境で力を発揮する。', axis: 'course', weights: { '札幌': 1, '函館': 1, '福島': 1, '小倉': 1, '東京': -1 } },
-      { id: 32, text: 'ごまかしの利かない実力主義のフェアな環境で、堂々と勝負したい。', axis: 'course', weights: { '東京': 1, '阪神': 1, '中山': -1, '小倉': -1 } },
-      { id: 33, text: 'トリッキーな状況や変化の激しい環境を乗り越えるのが得意だ。', axis: 'course', weights: { '中山': 1, '阪神': 1, '新潟': -1, '京都': -1 } },
-      { id: 34, text: '波乱がなく、淡々と自分のペースで進められる環境を好む。', axis: 'course', weights: { '新潟': 1, '京都': 1, '中京': 1, '中山': -1 } },
-      { id: 35, text: '困難や障害（急坂）が多いほど燃えるタイプだ。', axis: 'course', weights: { '中山': 1, '阪神': 1, '京都': -1 } },
-      { id: 36, text: '平坦でスムーズな道のりを、一直線に駆け抜けたい。', axis: 'course', weights: { '京都': 1, '新潟': 1, '中山': -1 } },
-      { id: 37, text: '少し変わった独自のルールがある組織のほうが馴染みやすい。', axis: 'course', weights: { '札幌': 1, '函館': 1, '中京': 1, '東京': -1 } },
-      { id: 38, text: 'スピードだけでなく、タフなパワーも求められる厳しい環境を好む。', axis: 'course', weights: { '阪神': 1, '中山': 1, '新潟': -1 } },
-      { id: 39, text: '長い時間をかけてじっくり実力を競える環境が良い。', axis: 'course', weights: { '東京': 1, '新潟': 1, '福島': -1, '小倉': -1 } },
-      { id: 40, text: '忙しく動き回り、機動力が求められるポジションが得意だ。', axis: 'course', weights: { '福島': 1, '小倉': 1, '東京': -1, '新潟': -1 } },
+  // --- 舞台適性 (course): 76-100 ---
+  { id: 76, text: '大人数のコミュニティより、少人数のアットホームな環境で力を発揮する。', axis: 'course', weights: { '札幌': 1, '函館': 1, '福島': 1, '小倉': 1 } },
+  { id: 77, text: 'ごまかしの利かない実力主義のフェアな環境で、堂々と勝負したい。', axis: 'course', weights: { '東京': 1, '阪神': 1 } },
+  { id: 78, text: 'トリッキーな状況や変化の激しい環境を乗り越えるのが得意だ。', axis: 'course', weights: { '中山': 1, '中京': 1 } },
+  { id: 79, text: '波乱がなく、淡々と自分のペースで進められる環境を好む。', axis: 'course', weights: { '新潟': 1, '京都': 1 } },
+  { id: 80, text: '困難や障害（急坂）が多いほど燃えるタイプだ。', axis: 'course', weights: { '中山': 1, '阪神': 1, '中京': 1 } },
+  { id: 81, text: '平坦でスムーズな道のりを、一直線に駆け抜けたい。', axis: 'course', weights: { '京都': 1, '新潟': 1 } },
+  { id: 82, text: '少し変わった独自のルールがある組織のほうが馴染みやすい。', axis: 'course', weights: { '札幌': 1, '中京': 1 } },
+  { id: 83, text: 'スピードだけでなく、タフなパワーも求められる厳しい環境を好む。', axis: 'course', weights: { '阪神': 1, '中山': 1 } },
+  { id: 84, text: '長い時間をかけてじっくり実力を競える環境が良い。', axis: 'course', weights: { '東京': 1, '新潟': 1 } },
+  { id: 85, text: '忙しく動き回り、機動力が求められるポジションが得意だ。', axis: 'course', weights: { '福島': 1, '小倉': 1, '函館': 1 } },
+  { id: 86, text: '「左利き」または左回りの方が落ち着く感覚がある。', axis: 'course', weights: { '東京': 1, '中京': 1, '新潟': 1 } },
+  { id: 87, text: '右回りの環境の方が、自然と力が入る。', axis: 'course', weights: { '中山': 1, '阪神': 1, '京都': 1 } },
+  { id: 88, text: '都心（大都市）での生活や仕事に強い憧れがある。', axis: 'course', weights: { '東京': 1, '阪神': 1 } },
+  { id: 89, text: '地方ののんびりした空気の方が、自分らしくいられる。', axis: 'course', weights: { '福島': 1, '小倉': 1, '函館': 1 } },
+  { id: 90, text: '伝統ある古い建物や、歴史を感じる場所が好きだ。', axis: 'course', weights: { '京都': 1, '中山': 1 } },
+  { id: 91, text: '最新の設備が整った、モダンな環境を求める。', axis: 'course', weights: { '東京': 1, '中京': 1 } },
+  { id: 92, text: '海が見える場所や、自然豊かな環境でリフレッシュできる。', axis: 'course', weights: { '函館': 1, '小倉': 1, '新潟': 1 } },
+  { id: 93, text: 'どんな場所でも、自分だけの「心地よい空間」を作れる。', axis: 'course', weights: { '札幌': 1, '福島': 1 } },
+  { id: 94, text: '坂道や階段の上り下りがあまり苦にならない。', axis: 'course', weights: { '中山': 1, '阪神': 1, '中京': 1 } },
+  { id: 95, text: '広い会議室よりも、自分のデスク周辺で勝負したい。', axis: 'course', weights: { '福島': 1, '小倉': 1 } },
+  { id: 96, text: '誰に見られても恥ずかしくない、模範的な立ち振る舞いをしたい。', axis: 'course', weights: { '東京': 1, '京都': 1 } },
+  { id: 97, text: '独自の文化を持つ「マニアックな場所」に惹かれる。', axis: 'course', weights: { '札幌': 1, '中京': 1 } },
+  { id: 98, text: '北国（涼しい場所）の方が仕事の効率が上がる。', axis: 'course', weights: { '札幌': 1, '函館': 1 } },
+  { id: 99, text: '暑い夏こそ、自分のパワーが最大限に発揮される時期だ。', axis: 'course', weights: { '小倉': 1, '新潟': 1, '福島': 1 } },
+  { id: 100, text: '変化球よりも、ど真ん中の直球で勝負できる場所が良い。', axis: 'course', weights: { '東京': 1, '新潟': 1 } },
 
-      // --- スタイル (Performance) ---
-      { id: 41, text: '常に一定の成果を出し続け、「安定感がある」と言われる。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
-      { id: 42, text: '気分にムラはあるが、ハマったときのパフォーマンスには絶対の自信がある。', axis: 'performance', weights: { '爆発': 1, '安定': -1 } },
-      { id: 43, text: '最初は目立たなくても、経験を積むごとにどんどん成長していくタイプだ。', axis: 'performance', weights: { '持続成長': 1, '爆発': -1 } },
-      { id: 44, text: '決まったルーティンワークを正確にこなすのは得意な方だ。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
-      { id: 45, text: '失敗を恐れず、常に新しいことにチャレンジしたい。', axis: 'performance', weights: { '爆発': 1, '安定': -1 } },
-      { id: 46, text: '過去の失敗を分析し、次に活かす能力が高い。', axis: 'performance', weights: { '持続成長': 1, '安定': -1 } },
-      { id: 47, text: '予期せぬトラブルが起きても、冷静に対処できる。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
-      { id: 48, text: '10回に1回の特大ホームランを狙うプレースタイルだ。', axis: 'performance', weights: { '爆発': 1, '安定': -1 } },
-      { id: 49, text: '他人のアドバイスを素直に聞き入れ、自分をアップデートできる。', axis: 'performance', weights: { '持続成長': 1, '安定': -1 } },
-      { id: 50, text: 'スランプに陥ることは少なく、いつでも計算できる戦力だ。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
+  // --- スタイル (performance): 101-125 ---
+  { id: 101, text: '常に一定の成果を出し続け、「安定感がある」と言われる。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
+  { id: 102, text: '気分にムラはあるが、ハマったときのパフォーマンスには絶対の自信がある。', axis: 'performance', weights: { '爆発': 1, '安定': -1 } },
+  { id: 103, text: '最初は目立たなくても、経験を積むごとにどんどん成長していくタイプだ。', axis: 'performance', weights: { '持続成長': 1, '爆発': -1 } },
+  { id: 104, text: '決まったルーティンワークを正確にこなすのは得意な方だ。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
+  { id: 105, text: '失敗を恐れず、常に新しいことにチャレンジしたい。', axis: 'performance', weights: { '爆発': 1, '安定': -1 } },
+  { id: 106, text: '過去の失敗を分析し、次に活かす能力が高い。', axis: 'performance', weights: { '持続成長': 1, '安定': -1 } },
+  { id: 107, text: '予期せぬトラブルが起きても、冷静に対処できる。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
+  { id: 108, text: '10回に1回の特大ホームランを狙うプレースタイルだ。', axis: 'performance', weights: { '爆発': 1, '安定': -1 } },
+  { id: 109, text: '他人のアドバイスを素直に聞き入れ、自分をアップデートできる。', axis: 'performance', weights: { '持続成長': 1, '安定': -1 } },
+  { id: 110, text: 'スランプに陥ることは少なく、いつでも計算できる戦力だ。', axis: 'performance', weights: { '安定': 1, '爆発': -1 } },
+  { id: 111, text: '「気分転換」が自分の能力をリセットする重要な鍵だ。', axis: 'performance', weights: { '爆発': 1 } },
+  { id: 112, text: '一度決めたら、何があっても途中で投げ出さない。', axis: 'performance', weights: { '持続成長': 1, '安定': 1 } },
+  { id: 113, text: '緊張する場面ほど、ワクワクして力が出る。', axis: 'performance', weights: { '爆発': 1 } },
+  { id: 114, text: '周りの人からは「信頼の塊」のような存在だと思われている。', axis: 'performance', weights: { '安定': 1 } },
+  { id: 115, text: '年齢を重ねることを、むしろ楽しみに感じている。', axis: 'performance', weights: { '持続成長': 1 } },
+  { id: 116, text: '自分の才能を、まだ自分でも底知れないと感じる時がある。', axis: 'performance', weights: { '爆発': 1 } },
+  { id: 117, text: '感情の起伏をあまり表に出さないようにしている。', axis: 'performance', weights: { '安定': 1 } },
+  { id: 118, text: '長い下積み生活にも耐えられる覚悟がある。', axis: 'performance', weights: { '持続成長': 1 } },
+  { id: 119, text: '「天才」という評価には、どこか違和感を感じる。自分は努力家だ。', axis: 'performance', weights: { '持続成長': 1, '安定': 1 } },
+  { id: 120, text: '一度エンジンがかかると、自分でも止められない勢いがある。', axis: 'performance', weights: { '爆発': 1 } },
+  { id: 121, text: '昨日の自分より、今日の方が一歩前進していると確信できる。', axis: 'performance', weights: { '持続成長': 1 } },
+  { id: 122, text: 'チェックリストを使って仕事を管理するのが好きだ。', axis: 'performance', weights: { '安定': 1 } },
+  { id: 123, text: '「一期一会」という言葉を大切にしている。', axis: 'performance', weights: { '爆発': 1 } },
+  { id: 124, text: '周囲の期待に常に応えなければならないという責任感が強い。', axis: 'performance', weights: { '安定': 1 } },
+  { id: 125, text: '自分の可能性は無限大だと信じている。', axis: 'performance', weights: { '爆発': 1, '持続成長': 1 } },
 
-      // --- 毛色 (Aura) ---
-      { id: 51, text: '組織の標準的なスタイルやルールに合わせることに抵抗がない。', axis: 'aura', weights: { '鹿毛': 1, '白毛': -1 } },
-      { id: 52, text: 'どこにいても自然と目立ってしまい、良くも悪くも注目を集めやすい。', axis: 'aura', weights: { '白毛': 1, '芦毛': 1, '鹿毛': -1 } },
-      { id: 53, text: '感情が表に出やすく、情熱的な性格だと言われる。', axis: 'aura', weights: { '栗毛': 1, '青鹿毛・黒鹿毛': -1 } },
-      { id: 54, text: 'クールでミステリアスな雰囲気を持ち、冷静沈着だと言われる。', axis: 'aura', weights: { '青鹿毛・黒鹿毛': 1, '栗毛': -1 } },
-      { id: 55, text: '最初はとっつきにくいと思われるが、付き合うほどに魅力が伝わるタイプだ。', axis: 'aura', weights: { '芦毛': 1, '白毛': -1 } },
-      { id: 56, text: 'どんな色の組織にもすぐに馴染むことができる。', axis: 'aura', weights: { '鹿毛': 1, '栗毛': -1 } },
-      { id: 57, text: 'カリスマ性があり、自然と人が集まってくる。', axis: 'aura', weights: { '白毛': 1, '鹿毛': -1 } },
-      { id: 58, text: '熱しやすく冷めやすいところがある。', axis: 'aura', weights: { '栗毛': 1, '青鹿毛・黒鹿毛': -1 } },
-      { id: 59, text: '自分の世界をしっかりと持っており、他人に流されない。', axis: 'aura', weights: { '青鹿毛・黒鹿毛': 1, '鹿毛': -1 } },
-      { id: 60, text: '年齢や経験を重ねるごとに、自分のスタイルが完成していく感覚がある。', axis: 'aura', weights: { '芦毛': 1, '栗毛': -1 } },
-    ];
-
-    const ANSWER_OPTIONS = [
-      { label: '非常にそう思う', score: 3, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
-      { label: 'そう思う', score: 2, color: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
-      { label: 'ややそう思う', score: 1, color: 'bg-emerald-400 hover:bg-emerald-500 text-white' },
-      { label: 'ややそう思わない', score: -1, color: 'bg-stone-400 hover:bg-stone-500 text-white' },
-      { label: 'あまりそう思わない', score: -2, color: 'bg-stone-500 hover:bg-stone-600 text-white' },
-      { label: '全くそう思わない', score: -3, color: 'bg-stone-600 hover:bg-stone-700 text-white' },
-    ];
+  // --- 毛色 (aura): 126-150 ---
+  { id: 126, text: '組織の標準的なスタイルやルールに合わせることに抵抗がない。', axis: 'aura', weights: { '鹿毛': 1, '白毛': -1 } },
+  { id: 127, text: 'どこにいても自然と目立ってしまい、良くも悪くも注目を集めやすい。', axis: 'aura', weights: { '白毛': 1, '芦毛': 1, '鹿毛': -1 } },
+  { id: 128, text: '感情が表に出やすく、情熱的な性格だと言われる。', axis: 'aura', weights: { '栗毛': 1, '青鹿毛・黒鹿毛': -1 } },
+  { id: 129, text: 'クールでミステリアスな雰囲気を持ち、冷静沈着だと言われる。', axis: 'aura', weights: { '青鹿毛・黒鹿毛': 1, '栗毛': -1 } },
+  { id: 130, text: '最初はとっつきにくいと思われるが、付き合うほどに魅力が伝わるタイプだ。', axis: 'aura', weights: { '芦毛': 1, '白毛': -1 } },
+  { id: 131, text: 'どんな色の組織にもすぐに馴染むことができる。', axis: 'aura', weights: { '鹿毛': 1, '栗毛': -1 } },
+  { id: 132, text: 'カリスマ性があり、自然と人が集まってくる。', axis: 'aura', weights: { '白毛': 1, '鹿毛': -1 } },
+  { id: 133, text: '熱しやすく冷めやすいところがある。', axis: 'aura', weights: { '栗毛': 1, '青鹿毛・黒鹿毛': -1 } },
+  { id: 134, text: '自分の世界をしっかりと持っており、他人に流されない。', axis: 'aura', weights: { '青鹿毛・黒鹿毛': 1, '鹿毛': -1 } },
+  { id: 135, text: '年齢や経験を重ねるごとに、自分のスタイルが完成していく感覚がある。', axis: 'aura', weights: { '芦毛': 1, '栗毛': -1 } },
+  { id: 136, text: 'どちらかと言えば、自分は「脇役」ではなく「主役」のタイプだ。', axis: 'aura', weights: { '白毛': 1, '栗毛': 1 } },
+  { id: 137, text: '目立つ服装や、派手な持ち物を好む。', axis: 'aura', weights: { '栗毛': 1, '白毛': 1 } },
+  { id: 138, text: '夜の静けさや、暗い色調のものを好む。', axis: 'aura', weights: { '青鹿毛・黒鹿毛': 1 } },
+  { id: 139, text: '「普通」であることが、実は一番難しいと感じる。', axis: 'aura', weights: { '鹿毛': 1 } },
+  { id: 140, text: '白黒はっきりさせたいタイプだ。', axis: 'aura', weights: { '白毛': 1, '青鹿毛・黒鹿毛': 1 } },
+  { id: 141, text: '人からは「不思議ちゃん」と言われることがたまにある。', axis: 'aura', weights: { '芦毛': 1 } },
+  { id: 142, text: '自分の信念を曲げるくらいなら、戦うことを選ぶ。', axis: 'aura', weights: { '栗毛': 1, '青鹿毛・黒鹿毛': 1 } },
+  { id: 143, text: '何色にでもなれる、透明な自分でありたい。', axis: 'aura', weights: { '鹿毛': 1, '芦毛': 1 } },
+  { id: 144, text: '圧倒的な「強さ」よりも「美しさ」で記憶に残りたい。', axis: 'aura', weights: { '白毛': 1, '芦毛': 1 } },
+  { id: 145, text: '物事を多角的に捉えることが得意だ。', axis: 'aura', weights: { '鹿毛': 1 } },
+  { id: 146, text: '他人に自分の内面を悟られたくない。', axis: 'aura', weights: { '青鹿毛・黒鹿毛': 1 } },
+  { id: 147, text: '誰からも愛される、親しみやすいオーラを持っている。', axis: 'aura', weights: { '鹿毛': 1, '栗毛': 1 } },
+  { id: 148, text: '自分だけの「神話」を作りたいという野心がある。', axis: 'aura', weights: { '白毛': 1 } },
+  { id: 149, text: '古い自分を脱ぎ捨てて、常に生まれ変わりたいと思う。', axis: 'aura', weights: { '芦毛': 1 } },
+  { id: 150, text: '最後には、自分自身を誇れる人間になりたい。', axis: 'aura', weights: { '鹿毛': 1, '白毛': 1, '栗毛': 1, '青鹿毛・黒鹿毛': 1, '芦毛': 1 } },
+];
 
     const CATEGORY_DESCRIPTIONS = {
       // Surface
@@ -203,6 +294,13 @@
         }, 150);
       } else {
         calculateResult();
+      }
+    }
+
+    function handleBack() {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        render();
       }
     }
 
@@ -396,9 +494,17 @@
             </h2>
           </div>
 
-          <div class="flex flex-col gap-3">
-            ${optionsHtml}
-          </div>
+    <div class="flex flex-col gap-3">
+  ${optionsHtml}
+</div>
+
+<div class="mt-6">
+  <button onclick="handleBack()" 
+style="position: relative; z-index: 9999;"
+    class="w-full text-sm text-stone-500 hover:text-stone-700 flex items-center justify-center gap-1">
+    ${ICONS.ChevronLeft} 前の質問に戻る
+  </button>
+</div>
         </div>
       `;
     }
